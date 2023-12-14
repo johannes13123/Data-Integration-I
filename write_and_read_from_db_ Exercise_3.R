@@ -42,7 +42,9 @@ psql_manipulate(cred = cred_psql_docker,
                 query_string = "drop SCHEMA intg1 cascade;")
 
 # Exercise 3. From R, do the following in your Postgres server (i.e. the Postgres server running in your postgres container)
-# Create a table in the new schema 
+# Step 1: Create a New Table in PostgreSQL
+# Using the psql_manipulate function to create a table named 'Student' in the 'intg1' schema.
+# The table includes 'student_id' as a serial primary key, 'student_name', and 'department_code'.
 psql_manipulate(cred = cred_psql_docker, 
                 query_string = 
                   "create table intg1.Student (
@@ -50,27 +52,31 @@ psql_manipulate(cred = cred_psql_docker,
                   student_name varchar(255),
                   department_code int);")
 
-# Write rows in the new table
+# Step 2: Insert Rows into the Table
+# Inserting two students, 'Hussein' and 'Johannes', into the 'Student' table with respective department codes.
 psql_manipulate(cred = cred_psql_docker, 
                 query_string = 
                   "insert into intg1.student
 	values (default, 'Hussein', '1')
 		  ,(default, 'Johannes', '2');")
 
-# Create an R dataframe
-df <- data.frame(student_name = c("Mads", "Adam"),
-                 department_code = c("3", "4"))
+# Step 3: Create an R Dataframe
+# Creating a dataframe 'df' in R with student names ('Mohammes', 'Adam') and their department codes.
+df <- data.frame(student_name = c("Mohammes", "Adam"),
+                 department_code = c("1", "2"))
 
-# Write the dataframe to a postgres table (columns with default values are skipped)
+# Step 4: Write the Dataframe to the Postgres Table
+# Appending the dataframe 'df' to the 'student' table in the 'intg1' schema of the PostgreSQL database.
+# Columns with default values are skipped in this process.
 student <- psql_append_df(cred = cred_psql_docker, 
-                             schema_name = "intg1", 
-                             tab_name = "student", 
-                             df = df)
-# Fetching rows into R
+                          schema_name = "intg1", 
+                          tab_name = "student", 
+                          df = df)
+
+# Step 5: Fetch and Display Rows from the Table into R
+# Using the psql_select function to fetch all rows from the 'Student' table and display them in R.
 psql_select(cred = cred_psql_docker, 
             query_string = "select * from intg1.student;")
-
-
 
 
 

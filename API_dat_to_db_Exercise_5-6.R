@@ -81,7 +81,7 @@ psql_select(cred = cred_psql_docker,
 psql_manipulate(cred = cred_psql_docker, 
                 query_string = "drop SCHEMA intg2 cascade;")
 
-# Exercise 5.
+# Exercise 5: Using API to Get Data and Transform into DataFrame
 # Extract data from Alpha Vantage
 req <- request("https://alpha-vantage.p.rapidapi.com") %>%
   req_url_path("query") %>%
@@ -97,29 +97,32 @@ resp <- req %>%
 dat <- resp %>%
   resp_body_json()
 
-# Exercise 5. Using API to get data and transform into dataframe ----------
-# TRANSFORM timestamp to UTC time
+# Transform the 'timestamp' to UTC time using lubridate package.
 timestamp <- lubridate::ymd_hms(names(dat$`Time Series (60min)`), tz = "US/Eastern")
 timestamp <- format(timestamp, tz = "UTC")
-# Prepare data.frame to hold results
+
+# Exercise 6: Transform Data into an R DataFrame and Load into PostgreSQL
+# Prepare an R dataframe 'df' to hold the results with specified columns.
 df <- tibble(timestamp = timestamp,
              open = NA, high = NA, low = NA, close = NA, volume = NA)
-# TRANSFORM data into a data.frame
+
+# Transform the fetched data into the dataframe.
 for (i in 1:nrow(df)) {
   df[i,-1] <- as.data.frame(dat$`Time Series (60min)`[[i]])
 }
 
-# Create table in Postgres ------------------------------------------------
-# Put the credentials in this script
-# This is my latest change!!
-# Never push credentials to git!! --> use .gitignore on .credentials.R
+# Create Table in PostgreSQL
+# Source the credentials from a .credentials.R file (ensure it's in .gitignore for security).
 source(".credentials.R")
-# Function to send queries to Postgres
+
+# Source a function to send queries to Postgres.
 source("psql_queries.R")
-# Create a new schema in Postgres on docker
+
+# Create a new schema 'intg2' in Postgres running in Docker.
 psql_manipulate(cred = cred_psql_docker, 
                 query_string = "CREATE SCHEMA intg2;")
-# Create a table in the new schema 
+
+# Create a table 'prices' in the new schema with specified columns.
 psql_manipulate(cred = cred_psql_docker, 
                 query_string = 
                   "create table intg2.prices (
@@ -131,17 +134,20 @@ psql_manipulate(cred = cred_psql_docker,
 	close numeric(30,4),
 	volume numeric(30,4));")
 
-# LOAD price data -------------------------------
+# Load Price Data into PostgreSQL
+# Append the dataframe 'df' to the 'prices' table in schema 'intg2'.
 psql_append_df(cred = cred_psql_docker,
                schema_name = "intg2",
                tab_name = "prices",
                df = df)
 
-# Check results -----------------------------------------------------------
-# Check that we can fetch the data again
+# Check Results in PostgreSQL
+# Fetch data from the 'prices' table to check if the data is loaded correctly.
 psql_select(cred = cred_psql_docker, 
-            query_string = 
-              "select * from intg2.prices")
-# If you wish, your can delete the schema (all the price data) from Postgres 
-psql_manipulate(cred = cred_psql_docker, 
-                query_string = "drop SCHEMA intg2 cascade;")
+            query_string = "select * from intg2.prices")
+
+# Optional: Delete the Schema from PostgreSQL
+# If desired, drop the 'intg2' schema along with all its data from PostgreSQL.
+# psql_manipulate(cred = cred_psql_docker, 
+#                 query_string = "drop SCHEMA intg2 cascade;")
+

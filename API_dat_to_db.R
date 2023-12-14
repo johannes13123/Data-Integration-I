@@ -111,6 +111,7 @@ for (i in 1:nrow(df)) {
 
 # Create table in Postgres ------------------------------------------------
 # Put the credentials in this script
+# This is my latest change!!
 # Never push credentials to git!! --> use .gitignore on .credentials.R
 source(".credentials.R")
 # Function to send queries to Postgres
